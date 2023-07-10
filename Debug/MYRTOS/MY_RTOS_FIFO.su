@@ -1,0 +1,5 @@
+MY_RTOS_FIFO.c:11:15:FIFO_init	24	static
+MY_RTOS_FIFO.c:28:15:FIFO_enqueue	16	static
+MY_RTOS_FIFO.c:58:15:FIFO_dequeue	16	static
+MY_RTOS_FIFO.c:86:15:FIFO_is_full	16	static
+MY_RTOS_FIFO.c:98:6:FIFO_print	16	static

@@ -1,0 +1,5 @@
+main.c:630:6:Task_ONE	8	static
+main.c:649:6:Task_TWO	8	static
+main.c:667:6:Task_THREE	8	static
+main.c:686:6:Task_FOUR	8	static
+main.c:707:5:main	16	static
