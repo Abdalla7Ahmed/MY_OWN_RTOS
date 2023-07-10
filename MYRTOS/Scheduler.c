@@ -34,45 +34,6 @@ FIFO_Buf_t Ready_Queue ;
 Task_ref *Ready_Queue_FIFO[100] ;
 Task_ref MYRTOS_IDLE_Task  ;
 
-typedef struct
-{
-	uint32_t *Resource_Address;
-	uint32_t Mutex_ID;
-	uint32_t counter ;
-	Task_ref *Blocked_Task ;
-	enum
-	{
-		Mutex_Unvalid,
-		Mutex_Valid
-	}Mutex_State;
-}Mutex;
-
-
-Mutex *G_Mutex[100];
-static uint32_t G_Counter =0;
-
-typedef struct
-{
-	uint32_t XPSR    ;
-	uint32_t PC	     ;
-	uint32_t LR      ;
-	uint32_t R12     ;
-	uint32_t R3      ;
-	uint32_t R2      ;
-	uint32_t R1      ;
-	uint32_t R0      ;
-	struct
-	{
-		uint32_t R4  ;
-		uint32_t R5  ;
-		uint32_t R6  ;
-		uint32_t R7  ;
-		uint32_t R8  ;
-		uint32_t R9  ;
-		uint32_t R10 ;
-		uint32_t R11 ;
-	}Manually_Saved_Registers ;
-}Task_Frame;
 
 typedef enum
 {
@@ -566,16 +527,9 @@ MYRTOS_Error_Source MYRTOS_Acquire_Mutex(Mutex_ref *Acquired_Mutex , Task_ref *T
 			Acquired_Mutex->Next_Task->Task_State = Task_Suspend;
 			if(Acquired_Mutex->Priority_Inheritance.Priority_Inheritance_State== PI_Enable)
 			{
-				if(Acquired_Mutex->Current_Task->Task_Priority > Acquired_Mutex->Next_Task->Task_Priority )
-				{
-					Acquired_Mutex->Priority_Inheritance.Saved_Pririty = Acquired_Mutex->Current_Task->Task_Priority;
-					Acquired_Mutex->Current_Task->Task_Priority = Acquired_Mutex->Next_Task->Task_Priority;
-				}
-				else
-				{
-					// the priority of the required task is is lower than the priority of the current task
-					// no need to Inheritance
-				}
+				Acquired_Mutex->Priority_Inheritance.Saved_Pririty = Acquired_Mutex->Current_Task->Task_Priority;
+				Acquired_Mutex->Current_Task->Task_Priority = Acquired_Mutex->Next_Task->Task_Priority;
+
 			}
 
 			MYRTOS_OS_SVC_Set(SCV_Acquire_Mutex);
