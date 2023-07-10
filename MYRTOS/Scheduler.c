@@ -398,22 +398,6 @@ void MYRTOS_OS_Bauble_Sort(void)
 }
 
 
-/* reorder the array element (from low to high )
- for (int i=0 ; i<9 ;i++)
-    {
-        for(int j=0 ; j< 9 ;  j++)
-        {
-            if(arr[i] < arr[j])
-            {
-                temp = arr[i];
-                arr[i] = arr[j];
-                arr[j] = temp ;
-            }
-        }
-    }
- */
-
-
 void MYRTOS_Decide_What_Next(void)
 {
 
