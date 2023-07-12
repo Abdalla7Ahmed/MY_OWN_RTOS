@@ -50,6 +50,7 @@ typedef enum
 	SCV_Acquire_Mutex,
 	SVC_Release_Mutex
 }SVC_ID;
+
 void MYRTOS_Creat_Main_Stack();
 void MYRTOS_Idle_Task(void);
 void MYRTOS_Creat_Task_Stack(Task_ref *Task_x);
@@ -61,7 +62,7 @@ void MYRTOS_Decide_What_Next(void);
 void MYRTOS_Update_Task_Waiting_Time();
 
 __attribute ((naked)) PendSV_Handler(void)
-				{
+{
 	// ===================================
 	// Save the context of the current task
 	// =================================
@@ -137,7 +138,7 @@ __attribute ((naked)) PendSV_Handler(void)
 	// 2-Update the PSP and exit
 	OS_SET_PSP(OS_Control.Current_Task->Task_Current_PSP);
 	__asm volatile("BX LR");
-				}
+}
 
 int systickLED;
 void SysTick_Handler(void)
@@ -353,18 +354,16 @@ void MYRTOS_Update_scheduler_Table(void)
 		Task_ref *PnextTask = OS_Control.OS_Tasks[i+1] ;
 		if(OS_Control.NoOfActiveTask ==1)
 		{
-			// idle task if there is no tasks activate
 			FIFO_enqueue(&Ready_Queue, Ptask);
 			Ptask->Task_State = Task_Ready;
 			break;
 		}
 		if((OS_Control.NoOfActiveTask -1) == i)
 		{
-			// Idle task if any task activate
 			FIFO_enqueue(&Ready_Queue, Ptask);
 			// update PTask state
 			Ptask->Task_State = Task_Ready;
-			break;  // because there is only one task is waiting
+			break; 
 		}
 		if(Ptask->Task_Priority > PnextTask->Task_Priority)
 		{
@@ -411,7 +410,7 @@ void MYRTOS_OS_Bauble_Sort(void)
 		}
 		else
 		{
-			// do nothing
+			
 		}
 	}
 
