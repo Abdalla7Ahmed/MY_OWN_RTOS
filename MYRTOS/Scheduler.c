@@ -32,8 +32,7 @@ struct
 {
 	Task_ref *OS_Tasks[100] ;
 	uint32_t NoOfCreatingTasks  ;
-}Temp_OS_Control;
-
+}Create_Task_t;
 
 
 #define IDLE_Task_Size			300
@@ -235,10 +234,8 @@ MYRTOS_Error_Source MYRTOS_Creat_Task(Task_ref *Task_x)
 	MYRTOS_Creat_Task_Stack(Task_x);
 
 	// update scheduler table
-	//	OS_Control.OS_Tasks[OS_Control.NoOfActiveTask] = Task_x;
-	//OS_Control.NoOfActiveTask++;
-	Temp_OS_Control.OS_Tasks[Temp_OS_Control.NoOfCreatingTasks] = Task_x;
-	Temp_OS_Control.NoOfCreatingTasks ++ ;
+	Create_Task_t.OS_Tasks[Create_Task_t.NoOfCreatingTasks] = Task_x;
+	Create_Task_t.NoOfCreatingTasks ++ ;
 
 	// Update task status (Suspend)
 	Task_x->Task_State = Task_Suspend;
@@ -390,7 +387,7 @@ void MYRTOS_Update_scheduler_Table(void)
 
 void MYRTOS_OS_Bauble_Sort(void)
 {
-	int i=0, j = 0 ,n = Temp_OS_Control.NoOfCreatingTasks;
+	int i=0, j = 0 ,n = Create_Task_t.NoOfCreatingTasks;
 	Task_ref *temp	;
 	// make sure that OS_Control contain 0 task
 	while(i<OS_Control.NoOfActiveTask)
@@ -402,9 +399,9 @@ void MYRTOS_OS_Bauble_Sort(void)
 
 	for(i=0;i<n;i++)
 	{
-		if(Temp_OS_Control.OS_Tasks[i]->Task_State !=Task_Suspend)
+		if(Create_Task_t.OS_Tasks[i]->Task_State !=Task_Suspend)
 		{
-			OS_Control.OS_Tasks[j]= Temp_OS_Control.OS_Tasks[i];
+			OS_Control.OS_Tasks[j]= Create_Task_t.OS_Tasks[i];
 			j++;
 		}
 		else
@@ -497,18 +494,18 @@ void MYRTOS_Task_Wait(uint32_t NoOfTicks,Task_ref *WaitTask)
 void MYRTOS_Update_Task_Waiting_Time()
 {
 	uint32_t i=0;
-	for(;i<Temp_OS_Control.NoOfCreatingTasks;i++)
+	for(;i<Create_Task_t.NoOfCreatingTasks;i++)
 	{
-		if(Temp_OS_Control.OS_Tasks[i]->Task_State == Task_Suspend)
+		if(Create_Task_t.OS_Tasks[i]->Task_State == Task_Suspend)
 		{
-			if(Temp_OS_Control.OS_Tasks[i]->T_Waiting.Blocking == Blocking_Enable)
+			if(Create_Task_t.OS_Tasks[i]->T_Waiting.Blocking == Blocking_Enable)
 			{
-				Temp_OS_Control.OS_Tasks[i]->T_Waiting.Ticks_Count --;
-				if(Temp_OS_Control.OS_Tasks[i]->T_Waiting.Ticks_Count == 0 )
+				Create_Task_t.OS_Tasks[i]->T_Waiting.Ticks_Count --;
+				if(Create_Task_t.OS_Tasks[i]->T_Waiting.Ticks_Count == 0 )
 				{
 					OS_Control.NoOfBlockedTask --;
-					Temp_OS_Control.OS_Tasks[i]->T_Waiting.Blocking = Blocking_Disable;
-					Temp_OS_Control.OS_Tasks[i]->Task_State = Task_Waiting;
+					Create_Task_t.OS_Tasks[i]->T_Waiting.Blocking = Blocking_Disable;
+					Create_Task_t.OS_Tasks[i]->Task_State = Task_Waiting;
 					MYRTOS_OS_SVC_Set(SVC_Task_Waiting_Time);
 				}
 				else
@@ -546,18 +543,13 @@ MYRTOS_Error_Source MYRTOS_Acquire_Mutex(Mutex_ref *Acquired_Mutex , Task_ref *T
 			Acquired_Mutex->Next_Task->Task_State = Task_Suspend;
 			if(Acquired_Mutex->Priority_Inheritance.Priority_Inheritance_State== PI_Enable)
 			{
-				if(Acquired_Mutex->Current_Task->Task_Priority > Acquired_Mutex->Next_Task->Task_Priority )
-				{
-					Acquired_Mutex->Priority_Inheritance.Saved_Pririty = Acquired_Mutex->Current_Task->Task_Priority;
-					Acquired_Mutex->Current_Task->Task_Priority = Acquired_Mutex->Next_Task->Task_Priority;
-				}
-				else
-				{
-					// the priority of the required task is is lower than the priority of the current task
-					// no need to Inheritance
-				}
+				Acquired_Mutex->Priority_Inheritance.Saved_Pririty = Acquired_Mutex->Current_Task->Task_Priority;
+				Acquired_Mutex->Current_Task->Task_Priority = Acquired_Mutex->Next_Task->Task_Priority;
 			}
+			else
+			{
 
+			}
 			MYRTOS_OS_SVC_Set(SCV_Acquire_Mutex);
 		}
 		else
