@@ -146,7 +146,6 @@ void SysTick_Handler(void)
 	systickLED ^=1;
 	if(OS_Control.NoOfBlockedTask)
 	{
-		MYRTOS_Update_scheduler_Table();
 		MYRTOS_Update_Task_Waiting_Time();
 	}
 	//decide what is the next task should be executed
