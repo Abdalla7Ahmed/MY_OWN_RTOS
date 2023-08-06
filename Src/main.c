@@ -24,20 +24,14 @@
 #include "Scheduler.h"
 #include "MY_RTOS_FIFO.h"
 
-
-
-
-
-
-
 // =========================================================================================
 // |===================================== test case 1 ======================================
 // =========================================================================================
 
 // if the task has the same priority (Round Robin)
 
-//int task1LED,task2LED,task3LED;
-//Task_ref Task1,Task2,Task3;
+//int task1LED,task2LED,task3LED,task4LED;
+//Task_ref Task1,Task2,Task3,Task4;
 //
 //void Task_ONE(void)
 //{
@@ -60,6 +54,15 @@
 //		task3LED ^=1;
 //	}
 //}
+//
+//void Task_FOUR(void)
+//{
+//	while(1)
+//	{
+//		task4LED ^=1;
+//	}
+//}
+//
 //
 //int main(void)
 //{
@@ -88,17 +91,22 @@
 //	Task3.Task_Priority = 3 ;
 //	Task3.Task_Size = 1024 ;
 //
+//	Task4.P_Task_Entry = Task_FOUR ;
+//	strcpy(Task4.Task_Name , "Task_4");
+//	Task4.Task_Priority = 3 ;
+//	Task4.Task_Size = 1024 ;
 //
 //
 //	error = MYRTOS_Creat_Task(&Task1);
 //	error = MYRTOS_Creat_Task(&Task2);
 //	error = MYRTOS_Creat_Task(&Task3);
-//
+//	error = MYRTOS_Creat_Task(&Task4);
 //
 //
 //	MYRTOS_Activate_Task(&Task1);
 //	MYRTOS_Activate_Task(&Task2);
 //	MYRTOS_Activate_Task(&Task3);
+//	MYRTOS_Activate_Task(&Task4);
 //
 //	MYRTOS_Start();
 //	/* Loop forever */
@@ -107,7 +115,7 @@
 //
 //	}
 //}
-
+//
 
 
 
@@ -216,13 +224,13 @@
 //	}
 //}
 
-
+//
 // =========================================================================================
 // |===================================== test case 3 ======================================
 // =========================================================================================
 //if there is no any task in ready states ---> idle task will executed only
 // we use instruction __asm("WFE") ; in idle task to make the processor in sleep mode until any event
-
+//
 //int main(void)
 //{
 //
@@ -315,7 +323,7 @@
 //
 //	Task4.P_Task_Entry = Task_FOUR ;
 //	strcpy(Task4.Task_Name , "Task_4");
-//	Task4.Task_Priority = 1 ;
+//	Task4.Task_Priority = 3 ;
 //	Task4.Task_Size = 1024 ;
 //
 //	error = MYRTOS_Creat_Task(&Task1);
@@ -337,7 +345,7 @@
 //
 //	}
 //}
-
+//
 
 // =========================================================================================
 // |===================================== test case 5 ======================================
@@ -622,145 +630,145 @@
 // |===================================== test case 7 ======================================
 // =========================================================================================
 // the same previous test case but here to avoid priority inversion , we will do priority inheritance
-int task1LED,task2LED,task3LED,task4LED;
-Task_ref Task1,Task2,Task3,Task4;
-Mutex_ref MUTEX1;
-uint8_t payload[3] = {1,2,3};
-
-void Task_ONE(void)
-{
-	static int counter ;
-	while(1)
-	{
-		task1LED ^=1;
-		counter ++ ;
-		if(counter == 100)
-		{
-			MYRTOS_Acquire_Mutex(&MUTEX1, &Task1);
-			MYRTOS_Activate_Task(&Task2);
-		}
-		if(counter == 200)
-		{
-			MYRTOS_Release_Mutex(&MUTEX1, &Task1);
-			counter =0;
-		}
-	}
-}
-void Task_TWO(void)
-{
-	static int counter ;
-	while(1)
-	{
-		task2LED ^=1;
-		counter ++;
-		if(counter == 100)
-		{
-			MYRTOS_Activate_Task(&Task3);
-		}
-		if(counter == 200)
-		{
-			MYRTOS_Terminate_Task(&Task2);
-			counter =0;
-		}
-	}
-}
-void Task_THREE(void)
-{
-	static int counter ;
-	while(1)
-	{
-		task3LED ^=1;
-		counter ++;
-		if(counter == 100)
-		{
-			MYRTOS_Activate_Task(&Task4);
-		}
-		if(counter == 200)
-		{
-			MYRTOS_Terminate_Task(&Task3);
-			counter =0;
-		}
-	}
-}
-
-void Task_FOUR(void)
-{
-	static int counter ;
-	while(1)
-	{
-		task4LED ^=1;
-		counter ++;
-		if(counter == 20)
-		{
-			// priority inheritance (task 1 will be highest priority until release mutes )
-			MYRTOS_Acquire_Mutex(&MUTEX1, &Task4);
-		}
-		if(counter == 200)
-		{
-			MYRTOS_Release_Mutex(&MUTEX1, &Task4);
-			MYRTOS_Terminate_Task(&Task4);
-			counter = 0;
-		}
-	}
-
-}
-int main(void)
-{
-
-	MYRTOS_HW_Init();
-	MYRTOS_Error_Source error ;
-
-	if(MYRTOS_init() != MYRTOS_NO_ERROR)
-	{
-		while(1);
-	}
-
-
-	strcpy(MUTEX1.Mutex_Name , "MUTEX_1");
-	MUTEX1.PayLoad = payload;
-	MUTEX1.PayLoadSize = 3;
-	MUTEX1.Priority_Inheritance.Priority_Inheritance_State = PI_Enable;
-
-	Task1.P_Task_Entry = Task_ONE ;
-	strcpy(Task1.Task_Name , "Task_1");
-	Task1.Task_Priority = 4 ;
-	Task1.Task_Size = 1024 ;
-
-	Task2.P_Task_Entry = Task_TWO ;
-	strcpy(Task2.Task_Name , "Task_2");
-	Task2.Task_Priority = 3 ;
-	Task2.Task_Size = 1024 ;
-
-	Task3.P_Task_Entry = Task_THREE ;
-	strcpy(Task3.Task_Name , "Task_3");
-	Task3.Task_Priority = 2 ;
-	Task3.Task_Size = 1024 ;
-
-
-	Task4.P_Task_Entry = Task_FOUR ;
-	strcpy(Task4.Task_Name , "Task_4");
-	Task4.Task_Priority = 1 ;
-	Task4.Task_Size = 1024 ;
-
-	error = MYRTOS_Creat_Task(&Task1);
-	error = MYRTOS_Creat_Task(&Task2);
-	error = MYRTOS_Creat_Task(&Task3);
-	error = MYRTOS_Creat_Task(&Task4);
-
-
-	// activate only task one
-	// then task one will activate the highest priority task
-	MYRTOS_Activate_Task(&Task1);
-
-
-
-	MYRTOS_Start();
-	/* Loop forever */
-	while(1)
-	{
-
-	}
-}
+//int task1LED,task2LED,task3LED,task4LED;
+//Task_ref Task1,Task2,Task3,Task4;
+//Mutex_ref MUTEX1;
+//uint8_t payload[3] = {1,2,3};
+//
+//void Task_ONE(void)
+//{
+//	static int counter ;
+//	while(1)
+//	{
+//		task1LED ^=1;
+//		counter ++ ;
+//		if(counter == 100)
+//		{
+//			MYRTOS_Acquire_Mutex(&MUTEX1, &Task1);
+//			MYRTOS_Activate_Task(&Task2);
+//		}
+//		if(counter == 200)
+//		{
+//			MYRTOS_Release_Mutex(&MUTEX1, &Task1);
+//			counter =0;
+//		}
+//	}
+//}
+//void Task_TWO(void)
+//{
+//	static int counter ;
+//	while(1)
+//	{
+//		task2LED ^=1;
+//		counter ++;
+//		if(counter == 100)
+//		{
+//			MYRTOS_Activate_Task(&Task3);
+//		}
+//		if(counter == 200)
+//		{
+//			MYRTOS_Terminate_Task(&Task2);
+//			counter =0;
+//		}
+//	}
+//}
+//void Task_THREE(void)
+//{
+//	static int counter ;
+//	while(1)
+//	{
+//		task3LED ^=1;
+//		counter ++;
+//		if(counter == 100)
+//		{
+//			MYRTOS_Activate_Task(&Task4);
+//		}
+//		if(counter == 200)
+//		{
+//			MYRTOS_Terminate_Task(&Task3);
+//			counter =0;
+//		}
+//	}
+//}
+//
+//void Task_FOUR(void)
+//{
+//	static int counter ;
+//	while(1)
+//	{
+//		task4LED ^=1;
+//		counter ++;
+//		if(counter == 20)
+//		{
+//			// priority inheritance (task 1 will be highest priority until release mutes )
+//			MYRTOS_Acquire_Mutex(&MUTEX1, &Task4);
+//		}
+//		if(counter == 200)
+//		{
+//			MYRTOS_Release_Mutex(&MUTEX1, &Task4);
+//			MYRTOS_Terminate_Task(&Task4);
+//			counter = 0;
+//		}
+//	}
+//
+//}
+//int main(void)
+//{
+//
+//	MYRTOS_HW_Init();
+//	MYRTOS_Error_Source error ;
+//
+//	if(MYRTOS_init() != MYRTOS_NO_ERROR)
+//	{
+//		while(1);
+//	}
+//
+//
+//	strcpy(MUTEX1.Mutex_Name , "MUTEX_1");
+//	MUTEX1.PayLoad = payload;
+//	MUTEX1.PayLoadSize = 3;
+//	MUTEX1.Priority_Inheritance.Priority_Inheritance_State = PI_Enable;
+//
+//	Task1.P_Task_Entry = Task_ONE ;
+//	strcpy(Task1.Task_Name , "Task_1");
+//	Task1.Task_Priority = 4 ;
+//	Task1.Task_Size = 1024 ;
+//
+//	Task2.P_Task_Entry = Task_TWO ;
+//	strcpy(Task2.Task_Name , "Task_2");
+//	Task2.Task_Priority = 3 ;
+//	Task2.Task_Size = 1024 ;
+//
+//	Task3.P_Task_Entry = Task_THREE ;
+//	strcpy(Task3.Task_Name , "Task_3");
+//	Task3.Task_Priority = 2 ;
+//	Task3.Task_Size = 1024 ;
+//
+//
+//	Task4.P_Task_Entry = Task_FOUR ;
+//	strcpy(Task4.Task_Name , "Task_4");
+//	Task4.Task_Priority = 1 ;
+//	Task4.Task_Size = 1024 ;
+//
+//	error = MYRTOS_Creat_Task(&Task1);
+//	error = MYRTOS_Creat_Task(&Task2);
+//	error = MYRTOS_Creat_Task(&Task3);
+//	error = MYRTOS_Creat_Task(&Task4);
+//
+//
+//	// activate only task one
+//	// then task one will activate the highest priority task
+//	MYRTOS_Activate_Task(&Task1);
+//
+//
+//
+//	MYRTOS_Start();
+//	/* Loop forever */
+//	while(1)
+//	{
+//
+//	}
+//}
 
 
 // =========================================================================================
@@ -864,8 +872,99 @@ int main(void)
 //	}
 //}
 //
-//
 
+// =========================================================================================
+// |===================================== test case 8 ======================================
+// =========================================================================================
+// Event Grout
+
+//Event_Group_ref event1;
+//int task1LED,task2LED,task3LED,task4LED;
+//Task_ref Task1,Task2,Task3,Task4;
+//
+//void Task_ONE(void)
+//{
+//	static int counter ;
+//	while(1)
+//	{
+//		task1LED ^=1;
+//		counter ++ ;
+//		if(counter == 10)
+//		{
+//			MYRTOS_Wait_Event(&event1, EV_2,&Task1);
+//			MYRTOS_Clear_Event(&event1, EV_2);
+//		}
+//		if(counter == 20)
+//		{
+//			counter =0;
+//		}
+//	}
+//}
+//
+//void Task_FOUR(void)
+//{
+//	static int counter ;
+//	while(1)
+//	{
+//		task4LED ^=1;
+//		counter ++;
+////		if(counter == 100)
+////		{
+////
+////		}
+//		if(counter == 20)
+//		{
+//			MYRTOS_Set_Event(&event1, EV_2);
+//			counter = 0;
+//		}
+//	}
+//
+//}
+//int main(void)
+//{
+//
+//	MYRTOS_HW_Init();
+//	MYRTOS_Error_Source error ;
+//
+//	if(MYRTOS_init() != MYRTOS_NO_ERROR)
+//	{
+//		while(1);
+//	}
+//
+//
+//	Task1.P_Task_Entry = Task_ONE ;
+//	strcpy(Task1.Task_Name , "Task_1");
+//	Task1.Task_Priority =1 ;
+//	Task1.Task_Size = 1024 ;
+//
+//
+//	Task4.P_Task_Entry = Task_FOUR ;
+//	strcpy(Task4.Task_Name , "Task_4");
+//	Task4.Task_Priority =3 ;
+//	Task4.Task_Size = 1024 ;
+//
+//
+//	strcpy(event1.Event_Group_Name , "Event_1");
+//
+//
+//
+//	error = MYRTOS_Creat_Task(&Task1);
+//	error = MYRTOS_Creat_Task(&Task4);
+//
+//
+//
+//	MYRTOS_Activate_Task(&Task1);
+//	MYRTOS_Activate_Task(&Task4);
+//
+//
+//
+//	MYRTOS_Start();
+//	/* Loop forever */
+//	while(1)
+//	{
+//
+//	}
+//}
 
 
 // ========================================================================================
