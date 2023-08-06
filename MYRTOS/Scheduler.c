@@ -359,11 +359,11 @@ void MYRTOS_Update_scheduler_Table(void)
 		}
 		if((OS_Control.NoOfActiveTask -1) == i)
 		{
-			// Idle task if any task activate
+			// Idle task if there is any task activated
 			FIFO_enqueue(&Ready_Queue, Ptask);
 			// update PTask state
 			Ptask->Task_State = Task_Ready;
-			break;  // because there is only one task is waiting
+			break;  
 		}
 		if(Ptask->Task_Priority > PnextTask->Task_Priority)
 		{
