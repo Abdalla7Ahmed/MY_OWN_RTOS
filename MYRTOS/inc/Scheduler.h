@@ -117,9 +117,9 @@ typedef struct
 #define EV_20                           0X80000
 #define EV_21                           0X100000
 #define EV_22                           0X200000
-#define EV_23                           0400000
+#define EV_23                           0X400000
 #define EV_24                           0X800000
-#define EV_25                           0X100000
+#define EV_25                           0X1000000
 #define EV_26                           0X2000000
 #define EV_27                           0X4000000
 #define EV_28                           0X8000000
