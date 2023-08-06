@@ -35,6 +35,7 @@ struct
 }Create_Task_t;
 
 
+
 #define IDLE_Task_Size			300
 FIFO_Buf_t Ready_Queue ;
 Task_ref *Ready_Queue_FIFO[100] ;
@@ -47,9 +48,9 @@ typedef enum
 	SVC_Terminate_Task,
 	SVC_Task_Waiting_Time,
 	SCV_Acquire_Mutex,
-	SVC_Release_Mutex
+	SVC_Release_Mutex,
+	SVC_Wait_Event
 }SVC_ID;
-
 void MYRTOS_Creat_Main_Stack();
 void MYRTOS_Idle_Task(void);
 void MYRTOS_Creat_Task_Stack(Task_ref *Task_x);
@@ -61,7 +62,7 @@ void MYRTOS_Decide_What_Next(void);
 void MYRTOS_Update_Task_Waiting_Time();
 
 __attribute ((naked)) PendSV_Handler(void)
-{
+										{
 	// ===================================
 	// Save the context of the current task
 	// =================================
@@ -137,7 +138,7 @@ __attribute ((naked)) PendSV_Handler(void)
 	// 2-Update the PSP and exit
 	OS_SET_PSP(OS_Control.Current_Task->Task_Current_PSP);
 	__asm volatile("BX LR");
-}
+										}
 
 int systickLED;
 void SysTick_Handler(void)
@@ -243,7 +244,6 @@ MYRTOS_Error_Source MYRTOS_Creat_Task(Task_ref *Task_x)
 
 }
 
-
 void MYRTOS_Creat_Task_Stack(Task_ref *Task_x)
 {
 	//Task_Frame Task ;
@@ -292,6 +292,7 @@ void MYRTOS_OS_SVC_Set(SVC_ID ID)
 	case SVC_Task_Waiting_Time:  __asm("SVC #0x02");           break ;
 	case SCV_Acquire_Mutex :     __asm("SVC #0x03");           break ;
 	case SVC_Release_Mutex:      __asm("SVC #0x04");           break ;
+	case SVC_Wait_Event   :      __asm("SVC #0x05");           break ;
 	}
 }
 
@@ -309,6 +310,7 @@ void OS_SVC(uint32_t *StackFram)
 	case SVC_Terminate_Task		 :
 	case SCV_Acquire_Mutex       :
 	case SVC_Release_Mutex       :
+	case SVC_Wait_Event			 :
 		// Update scheduler table & Ready Queue
 		MYRTOS_Update_scheduler_Table();
 		// Check OS is in Running state
@@ -350,16 +352,18 @@ void MYRTOS_Update_scheduler_Table(void)
 		Task_ref *PnextTask = OS_Control.OS_Tasks[i+1] ;
 		if(OS_Control.NoOfActiveTask ==1)
 		{
+			// idle task if there is no tasks activate
 			FIFO_enqueue(&Ready_Queue, Ptask);
 			Ptask->Task_State = Task_Ready;
 			break;
 		}
 		if((OS_Control.NoOfActiveTask -1) == i)
 		{
+			// Idle task if any task activate
 			FIFO_enqueue(&Ready_Queue, Ptask);
 			// update PTask state
 			Ptask->Task_State = Task_Ready;
-			break; 
+			break;  // because there is only one task is waiting
 		}
 		if(Ptask->Task_Priority > PnextTask->Task_Priority)
 		{
@@ -406,7 +410,7 @@ void MYRTOS_OS_Bauble_Sort(void)
 		}
 		else
 		{
-			
+
 		}
 	}
 
@@ -596,6 +600,82 @@ void MYRTOS_Release_Mutex(Mutex_ref *Released_Mutex, Task_ref *Task)
 
 	}
 
+}
+
+
+
+void MYRTOS_Set_Event(Event_Group_ref *Event_Group ,uint32_t Event_no)
+{
+	if(Event_Group->Event_Group_Value & Event_no == Event_no)
+	{
+		// the event is already set
+		// there is no task wait for this event
+	}
+	else
+	{
+		// set the event
+		Event_Group->Event_Group_Value |= Event_no;
+		// check if there is any task waiting for this event
+		for(int i=0;i<Create_Task_t.NoOfCreatingTasks;i++)
+		{
+			if(Create_Task_t.OS_Tasks[i]->Task_State == Task_Suspend)
+			{
+				if(Create_Task_t.OS_Tasks[i]->T_WaitForEvent.Waiting == Waiting_Enable)
+				{
+					if(Create_Task_t.OS_Tasks[i]->T_WaitForEvent.Event_Number == Event_no)
+					{
+						Event_Group->Number_Of_Waiting_Task --;
+						Create_Task_t.OS_Tasks[i]->T_WaitForEvent.Waiting = Waiting_Disable;
+						Create_Task_t.OS_Tasks[i]->Task_State = Task_Waiting;
+						MYRTOS_OS_SVC_Set(SVC_Wait_Event);
+					}
+					else
+					{
+						// the current check task event wait number is not the setting event number
+					}
+				}
+				else
+				{
+					// the task isn't blocked due to event
+				}
+			}
+			else
+			{
+				// the task is not suspended
+			}
+
+		}
+
+	}
+}
+void MYRTOS_Clear_Event(Event_Group_ref *Event_Group ,uint32_t Event_no)
+{
+	if((Event_Group->Event_Group_Value&Event_no) == Event_no)
+	{
+		Event_Group->Event_Group_Value &=~(Event_no);
+	}
+	else
+	{
+		// the event is already cleared
+	}
+
+}
+void MYRTOS_Wait_Event(Event_Group_ref *Event_Group ,uint32_t Event_no,Task_ref *Task_x)
+{
+	if(((Event_Group->Event_Group_Value)&Event_no) == Event_no )
+	{
+		// the task will not blocked because the event is set
+	}
+	else
+	{
+		// the event is not set yet
+		// make the task waiting for this event
+		Task_x->T_WaitForEvent.Waiting = Waiting_Enable;
+		Task_x->T_WaitForEvent.Event_Number = Event_no;
+		Event_Group->Number_Of_Waiting_Task ++;
+		Task_x->Task_State = Task_Suspend;
+		MYRTOS_OS_SVC_Set(SVC_Wait_Event);
+	}
 }
 
 
